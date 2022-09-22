@@ -1,0 +1,59 @@
+version: "3"
+services:
+
+  proxy:
+    image: 'traefik:v2.8'
+    container_name: proxy
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.http.address=:80"
+      - "--entrypoints.https.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=letsencrypt@example.host"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--entrypoints.http.http.redirections.entrypoint.to=https"
+      - "--entrypoints.http.http.redirections.entrypoint.scheme=https"
+    ports:
+      - '80:80'
+      - '443:443'
+      - '8080:8080'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - letsencrypt:/letsencrypt
+
+  whoami:
+    image: traefik/whoami
+    ports:
+      - '80'
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.sbirky_be.rule=Host(`example.host`)"
+      - "traefik.http.routers.sbirky_be.entrypoints=https"
+      - "traefik.http.routers.sbirky_be.tls.certresolver=letsencrypt"
+
+  whoami2:
+    image: traefik/whoami
+    ports:
+      - '80'
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami2.rule=Host(`test2.example.host`)"
+      - "traefik.http.routers.whoami2.entrypoints=https"
+      - "traefik.http.routers.whoami2.tls.certresolver=letsencrypt"
+
+  whoami3:
+    image: traefik/whoami
+    ports:
+      - '80'
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami3.rule=Host(`test3.example.host`,`test4.example.host`)"
+      - "traefik.http.routers.whoami3.entrypoints=https"
+      - "traefik.http.routers.whoami3.tls.certresolver=letsencrypt"
+volumes:
+    letsencrypt:
